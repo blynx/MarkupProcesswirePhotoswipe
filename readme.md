@@ -137,7 +137,7 @@ You may still provide your own more compatible gallery init script. (See _Custom
 
 #### 0.6 - 2017/07/06, liberated renderGallery()
 
-added: Liberated `renderGallery()` to accept arrays and WireArray derivatives
+added: Liberated `renderGallery()` to accept arrays and WireArray derivatives  
 other: Updated readme
 
 #### 0.5.1 - 2017/07/06, fixes
