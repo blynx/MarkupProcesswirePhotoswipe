@@ -17,7 +17,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
         return array(
             'title' => 'ProcessWire Photoswipe Gallery',
             'author' => 'Steffen Henschel',
-            'version' => '0.5.0',
+            'version' => '0.5.1',
             'summary' => __('Easily include Photoswipe by Dmitry Semenov'),
             'autoload' => true,
             'requires' => array('ProcessWire>=3.0.0', 'PHP>=5.6')
