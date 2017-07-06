@@ -16,7 +16,7 @@ The ProcessWire way of life: [http://modules.processwire.com/install-uninstall/]
 You can simply create a gallery and insert a thumbnail view by passing an image field to the module like so:
 
 ```php
-$pwpswp = $modules->get('Pwpswp');
+$pwpswp = $modules->get('MarkupProcesswirePhotoswipe');
 echo $pwpswp->renderGallery($page->nicePictures);
 ```
 
@@ -44,11 +44,11 @@ echo $pwpswp->renderGallery($images, $options, 'path/to/template/file_3');
 
 For the gallery initiation script to work you will have to implement the following CSS classes in your template. (As long as you won't provide your own initiation script)
 
-**`pwpswp-gallery`** &emsp;Defines individual galleries, provides photoswipe options
-**`pwpswp-gallery__item`**  &emsp;Defines gallery items
-**`pwpswp-gallery__link`**  &emsp;Provides oroginal image url, dimensions, lores image url
-**`pwpswp-gallery__image`** &emsp;Provides thumbnail image
-**`pwpswp-gallery__caption`** &emsp;Provides caption
+**`pwpswp-gallery`** &emsp;Defines individual galleries, provides photoswipe options  
+**`pwpswp-gallery__item`**  &emsp;Defines gallery items  
+**`pwpswp-gallery__link`**  &emsp;Provides oroginal image url, dimensions, lores image url  
+**`pwpswp-gallery__image`** &emsp;Provides thumbnail image  
+**`pwpswp-gallery__caption`** &emsp;Provides caption  
 
 Please have a look at the sourcecode of `pswp-gallery-template.html.php` and/or [the photoswipe documentation](https://github.com/dimsemenov/PhotoSwipe/blob/master/website/documentation/getting-started.md#-how-to-build-an-array-of-slides-from-a-list-of-links) for details of the implementation.  
 
@@ -132,4 +132,11 @@ You may still provide your own more compatible gallery init script. (See _Custom
 
 ## Changelog
 
-#### 0.5.0 — 2017/07/05, Initial release
+#### 0.5.1 - 2017/07/06, fixes
+
+removed: Removed pointless shortcut alias class  
+fixed: Use of correct module/class name for file paths  
+fixed: Configuration instructions for file paths  
+other: Updated readme  
+
+#### 0.5.0 - 2017/07/05, Initial release
