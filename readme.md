@@ -4,12 +4,16 @@ MarkupProcesswirePhotoswipe is a module for an easy yet customizable image galle
 
 This guide is likely incomplete but hopefully sufficient enough to get you started. Please let me know if you find any errors and bugs or if you have any suggestions and requests!
 
+You may get support directly from [me](https://twitter.com/blynxical) or in the [official ProcessWire forum thread](https://processwire.com/talk/topic/16677-markupprocesswirephotoswipe/)
+
 ## Installing the module
 
 The ProcessWire way of life: [http://modules.processwire.com/install-uninstall/](http://modules.processwire.com/install-uninstall/)
 (Not yet in the module directory)
 
-## How to implement
+You can use this link to install from URL: https://github.com/blynx/MarkupProcesswirePhotoswipe/archive/master.zip
+
+## How To
 
 ### I. Plug In Module
 
@@ -45,8 +49,8 @@ echo $pwpswp->renderGallery($images, $options, 'path/to/template/file_3');
 For the gallery initiation script to work you will have to implement the following CSS classes in your template. (As long as you won't provide your own initiation script)
 
 **`pwpswp-gallery`** &emsp;Defines individual galleries, provides photoswipe options  
-**`pwpswp-gallery__item`**  &emsp;Defines gallery items  
-**`pwpswp-gallery__link`**  &emsp;Provides oroginal image url, dimensions, lores image url  
+**`pwpswp-gallery__item`** &emsp;Defines gallery items  
+**`pwpswp-gallery__link`** &emsp;Provides original image url, dimensions, lores image url  
 **`pwpswp-gallery__image`** &emsp;Provides thumbnail image  
 **`pwpswp-gallery__caption`** &emsp;Provides caption  
 
@@ -69,8 +73,7 @@ htmlspecialchars(json_encode($PhotoswipeJsonOptions), ENT_QUOTES, 'UTF-8');
 
 You can deactiveate the automatic insertion of the script tags in the modules configuration.
 
-If you want to use eg. [require.js](http://www.requirejs.org) you can also activate that options. The photoswipe initiation script will be compatible then.
-Also you will need to initiate the galleries manually. An `init()` method will be exposed.
+If you want to use eg. [require.js](http://www.requirejs.org) you can also activate that option. The photoswipe initiation script will be compatible then. Also you will need to initiate the galleries manually like above.
 
 ## Options And Configuration
 
@@ -78,7 +81,7 @@ ProcesswirePhotoswipe tries to stick to the original configuration and options t
 
 Here is an example:
 
-```
+```php
 $galleryOptions = [
     'imageResizerOptions' => [
         'size' => '500x500'
@@ -99,7 +102,7 @@ $galleryOptions = [
     ]
 ];
 
-echo $pswp->renderGallery($page->images, $galleryOptions);
+echo $pwpswp->renderGallery($page->images, $galleryOptions);
 ```
 
 #### imageResizerOptions
@@ -131,6 +134,11 @@ Slightly more modern JS stuff is used here. It should work from ie10+ upwards.
 You may still provide your own more compatible gallery init script. (See _Custom scripts and usage of AMD_)
 
 ## Changelog
+
+#### 0.6 - 2017/07/06, liberated renderGallery()
+
+added: Liberated `renderGallery()` to accept arrays and WireArray derivatives
+other: Updated readme
 
 #### 0.5.1 - 2017/07/06, fixes
 

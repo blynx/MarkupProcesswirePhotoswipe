@@ -189,7 +189,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
       * @param  string      $templateFile   path to alternative template file
       * @return void
       */
-    public function renderGallery(Pageimages $images, array $options = null, string $templateFile = null) {
+    public function renderGallery($images, array $options = null, string $templateFile = null) {
 
         
         $defaultConfig = $this->getDefaultConfig();
@@ -224,7 +224,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
         bd($options, 'aggregated options');
 
         // image
-        if(get_class($images) === "ProcessWire\Pageimages") {
+        if($images instanceof WireArray || gettype($images) === 'array') {
 
             $templateFile = $templateFile ?: __DIR__ . DIRECTORY_SEPARATOR . "pswp-gallery-template.html.php";
 
@@ -234,6 +234,9 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
                 'imageResize' => $this->getResizeLambda($imageResizerOptions),
                 'loresResize' => $this->getResizeLambda($loresResizerOptions)
             ));
+        } else {
+            
+            throw new WireException("renderGallery() expects instanceof WireArray or array type.", 1);
         }
     }
 
