@@ -11,13 +11,33 @@
 class MarkupProcesswirePhotoswipe extends WireData implements Module, ConfigurableModule
 {
     
-    private static $className = 'MarkupProcesswirePhotoswipe';
+    const className = 'MarkupProcesswirePhotoswipe';
+
+    private $modulePath;
+    
+    private $moduleUrl;
+
+    private $themesPath;
+    
+    private $themesurl;
+
+    private $templatesPath;
+
+    private $templatesUrl;
+
+    private $availableThemes = [];  // ['theme-name' => 'module/themes/theme-name']
+
+    private $themeFile = '';        // resolved theme file
+
+    private $themeScripts = [];     // all script urls related to loaded themes
+
+    private $themeStyles = [];      // all styles urls related to loaded themes
 
     public static function getModuleInfo() {
         return array(
             'title' => 'ProcessWire Photoswipe Gallery',
             'author' => 'Steffen Henschel',
-            'version' => '0.5.1',
+            'version' => '0.7',
             'summary' => __('Easily include Photoswipe by Dmitry Semenov'),
             'autoload' => true,
             'requires' => array('ProcessWire>=3.0.0', 'PHP>=5.6')
@@ -26,27 +46,13 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
 
     static public function getDefaultConfig() {
         return array(
-            'foo' => 'bar',
+            'theme' => 'plain',
             'customSkinCssLocation' => '',
             'customUiJsLocation' => '',
             'imageResizerConfig' => "size=500x500\nupscaling=false\ncropping=false\nquality=90",
             'loresResizerConfig' => "size=320x320\nupscaling=false\ncropping=false\nquality=15",
             'scriptsMode' => 'auto'
             );
-    }
-
-    public function init() {
-
-        if(!$this->moduleLoaded) {
-
-            $this->addHookAfter("Page::render", $this, 'insertPwpswpMarkup');
-            $this->set('moduleLoaded', true);
-        
-        } else {
-
-            // flag page to allow hook to insert all required markup
-            wire('page')->set('pwpswpFlag', true);
-        }
     }
 
     public function __construct() {
@@ -58,123 +64,177 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
 
 
     /**
-     * insertPwpswpMarkup
+     * init
+     *
+     * @return void
+     */
+    public function init() {
+
+        if(!$this->moduleLoaded) {
+            
+            $this->addHookAfter("Page::render", $this, 'insertResources');
+            $this->set('moduleLoaded', true);
+
+            // set common paths and urls
+            $this->modulePath = wire('config')->paths->siteModules . self::className . '/';
+            $this->moduleUrl = wire('config')->urls->siteModules . self::className . '/';
+            $this->themesPath = $this->modulePath . 'themes/';
+            $this->themesUrl = $this->moduleUrl . 'themes/';
+            $this->templatesPath = wire('config')->paths->templates;
+            $this->templatesUrl = wire('config')->urls->templates;
+
+            // scan for valid themes
+            $this->availableThemes = $this->findThemes();
+
+            wire('config')->set('pwpswpConf', new WireData());
+            wire('config')->pwpswpConf->hookFlag = false;
+            wire('config')->pwpswpConf->scripts = new FilenameArray();
+            wire('config')->pwpswpConf->styles = new FilenameArray();
+
+        } else {
+            // set flag to allow hook to insert all required markup
+            wire('config')->pwpswpConf->hookFlag = true;
+            $this->collectResources($this->theme);
+        }
+    }
+
+
+
+    /**
+     * findThemes
+     *
+     * scan modules theme directory and make a list of valid themes
+     * 
+     * @return array ['theme-name' => 'theme-php-path']
+     */
+    static private function findThemes() {
+        $modulePath = dirname(__FILE__);
+        $themesPath = $modulePath . '/themes';
+        $themesArray = [];
+        // scan themes directory for themes
+        // add names which can resolve my-theme/my-theme.php 
+        $themesPathHandle = opendir($themesPath);
+        if($themesPathHandle) {
+            while(($entry = readdir($themesPathHandle))) {
+                $entryPath = $themesPath . '/' . $entry;
+                $entryPhp = $entryPath . '/' . $entry . '.php';
+                if(is_dir($entryPath) && $entry != '.' && $entry != '..' && file_exists($entryPhp)) {
+                    $themesArray[$entry] = $entryPath;
+                }
+            }
+        }
+        return $themesArray;
+    }
+
+
+
+    /**
+     * insertResources
      * 
      * hook method
      *
      * @param HookEvent $event
      * @return void
      */
-    public function insertPwpswpMarkup(HookEvent $event) {
-        
-        // is page flagged to include all photoswipe & gallery markup?
-        $pageHasPwpswpFlag = wire("page")->pwpswpFlag == true ? true : false;
+    public function insertResources(HookEvent $event) {
 
-        if ($pageHasPwpswpFlag) {
+        if (wire('config')->pwpswpConf->hookFlag == true) {
 
             // insert all stylesheet tags into the page header markup
-            $event->return = str_ireplace("</head>",  $this->getStylesheetLinks() . '</head>', $event->return);
+            $compiledStyleSheets = '';
+            foreach (wire('config')->pwpswpConf->styles as $styleUrl) {
+                $compiledStyleSheets .= "<link rel=\"stylesheet\" href=\"$styleUrl\">\n";
+            }
+            $event->return = str_ireplace('</head>', $compiledStyleSheets  . '</head>', $event->return);
 
             // append all script tags and the photoswipe element to the body
-            if($this->scriptsMode === 'auto') {
-                $event->return = str_ireplace("</body>",  $this->getPswpElementMarkup() . "\n" . $this->getScriptTags() . "\n</body>", $event->return);
+            $compiledScriptTags = '';
+            foreach (wire('config')->pwpswpConf->scripts as $scriptUrl) {
+                $compiledScriptTags .= "<script src=\"$scriptUrl\"></script>\n";
             }
-        
-        } else { return; }
-    }
-
-
-
-    /**
-     * getStylesheetLinks
-     *
-     * @return string
-     */
-    public function getStylesheetLinks() {
-
-        // core CSS link
-        $coreCssUrl = wire('config')->urls->siteModules . $this->className . "/photoswipe/photoswipe.css";
-        $coreCssLinkMarkup = "<link rel=\"stylesheet\" href=\"$coreCssUrl\">";
-
-        // skin CSS link
-        if($this->customSkinCssLocation != '') {
-            $skinCssUrl = wire('config')->urls->root . ltrim( $this->customSkinCssLocation , '/');
-        } else {
-            $skinCssUrl = wire('config')->urls->siteModules . $this->className . "/photoswipe/default-skin/default-skin.css";
+            $event->return = str_ireplace('</body>',  $this->getPswpElementMarkup() . "\n" . $compiledScriptTags . "\n</body>", $event->return);
         }
-        $skinCssLinkMarkup = "<link rel=\"stylesheet\" href=\"$skinCssUrl\">";
-
-        return "$coreCssLinkMarkup\n$skinCssLinkMarkup";
     }
 
 
 
-    /**
-     * getPswpCoreJsUrl
-     *
-     * @return void
-     */
+    public function getPswpCoreCssUrl() {
+        return $this->moduleUrl . "photoswipe/photoswipe.css";
+    }
+
+    public function getPswpSkinCssUrl() {
+        if($this->customSkinCssLocation != '') {
+            return wire('config')->urls->root . ltrim( $this->customSkinCssLocation , '/');
+        } else {
+            return $this->moduleUrl . "photoswipe/default-skin/default-skin.css";
+        }
+    }
+
     public function getPswpCoreJsUrl() {
-        return wire('config')->urls->siteModules . $this->className . "/photoswipe/photoswipe.min.js";
+        return  $this->moduleUrl . "photoswipe/photoswipe.min.js";
     }
 
-
-
-    /**
-     * getPswpUiJsUrl
-     *
-     * @return void
-     */
     public function getPswpUiJsUrl() {
-
         if($this->customUiJsLocation != '') {
             return wire('config')->urls->root . ltrim( $this->customUiJsLocation , '/');
         } else {
-            return wire('config')->urls->siteModules . $this->className . "/photoswipe/photoswipe-ui-default.min.js";
+            return $this->moduleUrl . "photoswipe/photoswipe-ui-default.min.js";
         }
     }
 
-
-
-    /**
-     * getPswpInitScript
-     *
-     * @return void
-     */
-    public function getPswpInitScript() {
-        
+    public function getPswpInitScriptUrl() {
         if($this->scriptsMode === 'amd') {
-            return wire('config')->urls->siteModules . $this->className . "/pwpswp-amd.js";
+            return $this->moduleUrl . "pwpswp-amd.js";
         } else {
-            return wire('config')->urls->siteModules . $this->className . "/pwpswp.js";
+            return $this->moduleUrl . "pwpswp.js";
         }
     }
 
-    /**
-     * getScriptTags
-     * 
-     * get combined script tags
-     *
-     * @return string
-     */
-    public function getScriptTags() {
-
-        $coreJsScriptTag = "<script src=\"" . $this->getPswpCoreJsUrl() . "\"></script>";
-        $uiJsScriptTag = "<script src=\"" . $this->getPswpUiJsUrl() . "\"></script>";
-        $pwpswpJsScriptTag = "<script src=\"" . $this->getPswpInitScript() . "\"></script>";
-
-        return "$coreJsScriptTag\n$uiJsScriptTag\n$pwpswpJsScriptTag";
-    }
-
-
-
-    /**
-     * getPswpElementMarkup
-     *
-     * @return string
-     */
     public function getPswpElementMarkup() {
         return  file_get_contents( __DIR__ . DIRECTORY_SEPARATOR . "pswp-element.html" );
+    }
+
+
+
+    /**
+     * collectResources
+     * 
+     * @param string    $theme
+     */
+    private function collectResources(string $theme = null) {
+
+        // Photoswipe stuff
+
+        if($this->scriptsMode === 'auto') {
+            wire('config')->pwpswpConf->scripts->add($this->getPswpCoreJsUrl());
+            wire('config')->pwpswpConf->scripts->add($this->getPswpUiJsUrl());
+            wire('config')->pwpswpConf->scripts->add($this->getPswpInitScriptUrl());            
+        }
+
+        wire('config')->pwpswpConf->styles->add($this->getPswpCoreCssUrl());
+        wire('config')->pwpswpConf->styles->add($this->getPswpSkinCssUrl());
+
+        // ProcesswirePhotoswipe stuff
+
+        if(array_key_exists($theme, $this->availableThemes)) {
+            
+            $themeStyle = $this->themesUrl . "$theme/$theme.css";
+            if(file_exists($this->themesPath . "$theme/$theme.css")) wire('config')->pwpswpConf->styles->add($themeStyle);
+            
+            $themeScript = $this->themesUrl . "$theme/$theme.js";
+            if(file_exists($this->themesPath . "$theme/$theme.js")) wire('config')->pwpswpConf->scripts->add($themeScript);
+
+        } else if(file_exists($this->templatesPath.$theme)) {
+
+            $themeStyle = preg_replace("/(.php$)/", ".css", $this->themeFile);
+            if(file_exists($themeStyle)) $this->themeStyles[] = preg_replace("/(.php$)/", ".css", $this->templatesUrl.$theme);
+            
+            $themeScript = preg_replace("/(.php$)/", ".js", $this->themeFile);
+            if(file_exists($themeScript)) $this->themeScripts[] = preg_replace("/(.php$)/", ".js", $this->templatesUrl.$theme);;
+        }
+
+        wire('config')->pwpswpConf->scripts->unique();
+        wire('config')->pwpswpConf->styles->unique();
     }
 
 
@@ -189,48 +249,51 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
       * @param  string      $templateFile   path to alternative template file
       * @return void
       */
-    public function renderGallery($images, array $options = null, string $templateFile = null) {
-
+    public function renderGallery($images, array $options = null, string $theme = null) {
         
-        $defaultConfig = $this->getDefaultConfig();
-        
-        // imageResizerOptions
-        // 
-        // according to the processwire imageResizerOptions, except:
-        // size is defined like so ['size' => '640x480']
-        //
-        // decode imageResizerConfigurations in default configuration 
-        // for a more comprehensible override capability
-        $imageResizerOptions = $this->decodeTextareaData($defaultConfig['imageResizerConfig']);
-        $loresResizerOptions = $this->decodeTextareaData($defaultConfig['loresResizerConfig']);
-
-        // 1. merge each with unnamespaced resizerOptions from $options, 
-        //    convenience feature to declare common settings
-        if($options) {
-            $imageResizerOptions = array_merge($imageResizerOptions, $options);
-            // $loresResizerOptions = array_merge($loresResizerOptions, $options); // do not apply to lores, one might not alwas want that
-        }
-
-        // 2. merge with individually namespaced resizerOptions
-        if(isset($options['imageResizerOptions'])) { $imageResizerOptions = array_merge($imageResizerOptions, $options['imageResizerOptions']); }
-        if(isset($options['loresResizerOptions'])) { $loresResizerOptions = array_merge($loresResizerOptions, $options['loresResizerOptions']); }
-
-        // flag page to allow hook to insert all required markup
-        wire('page')->set('pwpswpFlag', true);
-
-        // image
         if($images instanceof WireArray || gettype($images) === 'array') {
 
-            $templateFile = $templateFile ?: __DIR__ . DIRECTORY_SEPARATOR . "pswp-gallery-template.html.php";
+            $this->addHookAfter("Page::render", $this, 'insertPwpswpStyleAndScriptMarkup');
 
-            return wire('files')->render($templateFile, array(
+            $defaultConfig = $this->getDefaultConfig();
+        
+            // imageResizerOptions
+            // 
+            // according to the processwire imageResizerOptions, except:
+            // size is defined like so ['size' => '640x480']
+            //
+            // decode imageResizerConfigurations in default configuration 
+            // for a more comprehensible override capability
+            $imageResizerOptions = $this->decodeTextareaData($defaultConfig['imageResizerConfig']);
+            $loresResizerOptions = $this->decodeTextareaData($defaultConfig['loresResizerConfig']);
+
+            // 1. merge each with unnamespaced resizerOptions from $options, 
+            //    convenience feature to declare common settings
+            if($options) {
+                $imageResizerOptions = array_merge($imageResizerOptions, $options);
+                // $loresResizerOptions = array_merge($loresResizerOptions, $options); // do not apply to lores, one might not alwas want that
+            }
+
+            // 2. merge with individually namespaced resizerOptions
+            if(isset($options['imageResizerOptions'])) { $imageResizerOptions = array_merge($imageResizerOptions, $options['imageResizerOptions']); }
+            if(isset($options['loresResizerOptions'])) { $loresResizerOptions = array_merge($loresResizerOptions, $options['loresResizerOptions']); }
+
+            $theme = $theme ?: $options['theme'] ?: $this->theme;
+            $themeFile = $this->getThemeFile($theme);
+
+            $this->collectResources($theme);
+
+            // flag page to allow hook to insert all required markup
+            wire('config')->pwpswpConf->hookFlag = true;
+
+            return wire('files')->render($themeFile, array(
                 'images' => $images,
                 'options' => $options,
                 'imageResize' => $this->getResizeLambda($imageResizerOptions),
                 'loresResize' => $this->getResizeLambda($loresResizerOptions)
             ));
+
         } else {
-            
             throw new WireException("renderGallery() expects instanceof WireArray or array type.", 1);
         }
     }
@@ -254,10 +317,29 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
             $resizeOptions = array_merge($resizeOptions, $mixinOptions);
 
             $w = isset($resizeOptions['size'][0]) ? $resizeOptions['size'][0] : 0; 
-            $h = isset($resizeOptions['size'][1]) ? $resizeOptions['size'][0] : 0;
+            $h = isset($resizeOptions['size'][1]) ? $resizeOptions['size'][1] : 0;
 
             return $image->size($w, $h, $resizeOptions);
         };
+    }
+
+
+
+    /**
+     * getThemeFile
+     *
+     * Sees if $theme is available theme name, if so, return corresponding theme file path.
+     * If $theme is a php file relative to the templates folder, return this file path.
+     * 
+     * @param string    $theme
+     */
+    private function getThemeFile(string $theme = null) {
+        
+        if(array_key_exists($theme, $this->availableThemes)) {
+            return $this->availableThemes[$theme] . "/$theme.php";
+        } else if(file_exists($this->templatesPath.$theme)) {
+            return $this->templatesPath.$theme;
+        }
     }
 
 
@@ -268,7 +350,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
      * @param string $datablob
      * @return void
      */
-    private function decodeTextareaData(string $datablob) {
+    private function decodeTextareaData($datablob) {
 
         // split lines
         // https://stackoverflow.com/questions/7058168/explode-textarea-php-at-new-lines
@@ -326,10 +408,22 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
         $field->value = 'Hello';
         $form->add($field);
 
+        // choose theme
+        $field = $modules->get("InputfieldRadios");
+        $field->name = "theme";
+        $field->label = __("Choose theme");
+        $field->description = __("Affects gallery markup, style and functionality. Does not affect Photoswipe skin!");
+        foreach (self::findThemes() as $key => $value) {
+            $field->addOption($key);
+        }
+        // $field->notes = __("");
+        $field->value = $data['theme'];
+        $form->add($field);
+
         // custom skin css location
         $field = $modules->get("InputfieldText");
         $field->name = "customSkinCssLocation";
-        $field->label = __("Location of custom skin");
+        $field->label = __("Location of custom Photoswipe CSS skin file");
         // $field->description = "";
         $field->notes = __("Relative to ProcessWires root folder.");
         $field->value = $data['customSkinCssLocation'];
@@ -339,7 +433,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
         // custom ui js location
         $field = $modules->get("InputfieldText");
         $field->name = "customUiJsLocation";
-        $field->label = __("Location of custom UI js file");
+        $field->label = __("Location of custom Photoswipe UI js file");
         // $field->description = "";
         $field->notes = __("Relative to ProcessWires root folder.");
         $field->value = $data['customUiJsLocation'];

@@ -1,0 +1,18 @@
+.pwpswp-gallery--flex {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.pwpswp-gallery__item--flex {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-flow: column;
+    margin: 2.5em 1.5em;
+}
+
+/*.pwpswp-gallery__link--flex {}
+.pwpswp-gallery__image--flex {}
+.pwpswp-gallery__caption--flex {}*/
