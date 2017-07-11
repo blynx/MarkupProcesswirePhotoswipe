@@ -206,12 +206,12 @@ You may still provide your own more compatible gallery init script. (See _Custom
 
 #### 0.7 - 2017/07/11, themes
 
-fixed: Size option correctly adopts height value
-added: Theme functionality
-added: Simple themes 'plain' (previous default), 'flex', 'h-scroller'
-other: Updated readme
-other: No notice on undefined photoswipe options
-other: Refactoring
+fixed: Size option correctly adopts height value  
+added: Theme functionality  
+added: Simple themes 'plain' (previous default), 'flex', 'h-scroller'  
+other: Updated readme  
+other: No notice on undefined photoswipe options  
+other: Refactoring  
 
 #### 0.6 - 2017/07/06, liberated renderGallery()
 
