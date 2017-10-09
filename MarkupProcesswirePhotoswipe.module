@@ -1,24 +1,24 @@
 <?php namespace ProcessWire;
 /**
  * MarkupProcesswirePhotoswipe
- * 
+ *
  * Photoswipe gallery for processwire
- * 
+ *
  * @todo add flavours, themes (bright)
  * @todo embedded, nonmodal mode
- * 
+ *
  */
 class MarkupProcesswirePhotoswipe extends WireData implements Module, ConfigurableModule
 {
-    
+
     const className = 'MarkupProcesswirePhotoswipe';
 
     private $modulePath;
-    
+
     private $moduleUrl;
 
     private $themesPath;
-    
+
     private $themesurl;
 
     private $templatesPath;
@@ -71,7 +71,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
     public function init() {
 
         if(!$this->moduleLoaded) {
-            
+
             $this->addHookAfter("Page::render", $this, 'insertResources');
             $this->set('moduleLoaded', true);
 
@@ -104,7 +104,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
      * findThemes
      *
      * scan modules theme directory and make a list of valid themes
-     * 
+     *
      * @return array ['theme-name' => 'theme-php-path']
      */
     static private function findThemes() {
@@ -112,7 +112,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
         $themesPath = $modulePath . '/themes';
         $themesArray = [];
         // scan themes directory for themes
-        // add names which can resolve my-theme/my-theme.php 
+        // add names which can resolve my-theme/my-theme.php
         $themesPathHandle = opendir($themesPath);
         if($themesPathHandle) {
             while(($entry = readdir($themesPathHandle))) {
@@ -130,7 +130,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
 
     /**
      * insertResources
-     * 
+     *
      * hook method
      *
      * @param HookEvent $event
@@ -198,7 +198,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
 
     /**
      * collectResources
-     * 
+     *
      * @param string    $theme
      */
     private function collectResources(string $theme = null) {
@@ -208,7 +208,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
         if($this->scriptsMode === 'auto') {
             wire('config')->pwpswpConf->scripts->add($this->getPswpCoreJsUrl());
             wire('config')->pwpswpConf->scripts->add($this->getPswpUiJsUrl());
-            wire('config')->pwpswpConf->scripts->add($this->getPswpInitScriptUrl());            
+            wire('config')->pwpswpConf->scripts->add($this->getPswpInitScriptUrl());
         }
 
         wire('config')->pwpswpConf->styles->add($this->getPswpCoreCssUrl());
@@ -217,10 +217,10 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
         // ProcesswirePhotoswipe stuff
 
         if(array_key_exists($theme, $this->availableThemes)) {
-            
+
             $themeStyle = $this->themesUrl . "$theme/$theme.css";
             if(file_exists($this->themesPath . "$theme/$theme.css")) wire('config')->pwpswpConf->styles->add($themeStyle);
-            
+
             $themeScript = $this->themesUrl . "$theme/$theme.js";
             if(file_exists($this->themesPath . "$theme/$theme.js")) wire('config')->pwpswpConf->scripts->add($themeScript);
 
@@ -228,7 +228,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
 
             $themeStyle = preg_replace("/(.php$)/", ".css", $this->themeFile);
             if(file_exists($themeStyle)) $this->themeStyles[] = preg_replace("/(.php$)/", ".css", $this->templatesUrl.$theme);
-            
+
             $themeScript = preg_replace("/(.php$)/", ".js", $this->themeFile);
             if(file_exists($themeScript)) $this->themeScripts[] = preg_replace("/(.php$)/", ".js", $this->templatesUrl.$theme);;
         }
@@ -241,33 +241,31 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
 
      /**
       * renderGallery
-      * 
+      *
       * Render complete gallery markup from image field Pageimages.
       *
       * @param  Pageimages  $images         Array of images from image field
-      * @param  array       $options        
+      * @param  array       $options
       * @param  string      $templateFile   path to alternative template file
       * @return void
       */
     public function renderGallery($images, array $options = null, string $theme = null) {
-        
+
         if($images instanceof WireArray || gettype($images) === 'array') {
 
             $this->addHookAfter("Page::render", $this, 'insertPwpswpStyleAndScriptMarkup');
 
-            $defaultConfig = $this->getDefaultConfig();
-        
             // imageResizerOptions
-            // 
+            //
             // according to the processwire imageResizerOptions, except:
             // size is defined like so ['size' => '640x480']
             //
-            // decode imageResizerConfigurations in default configuration 
+            // decode imageResizerConfigurations in default configuration
             // for a more comprehensible override capability
-            $imageResizerOptions = $this->decodeTextareaData($defaultConfig['imageResizerConfig']);
-            $loresResizerOptions = $this->decodeTextareaData($defaultConfig['loresResizerConfig']);
+            $imageResizerOptions = $this->decodeTextareaData($this['imageResizerConfig']);
+            $loresResizerOptions = $this->decodeTextareaData($this['loresResizerConfig']);
 
-            // 1. merge each with unnamespaced resizerOptions from $options, 
+            // 1. merge each with unnamespaced resizerOptions from $options,
             //    convenience feature to declare common settings
             if($options) {
                 $imageResizerOptions = array_merge($imageResizerOptions, $options);
@@ -305,7 +303,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
      *
      * @param   array       $resizeOptions
      * @param   array       $mixinOptions
-     * @return  callable    
+     * @return  callable
      */
     public function getResizeLambda($resizeOptions) {
 
@@ -316,7 +314,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
             $resizeOptions['size'] = explode('x', $resizeOptions['size']);
             $resizeOptions = array_merge($resizeOptions, $mixinOptions);
 
-            $w = isset($resizeOptions['size'][0]) ? $resizeOptions['size'][0] : 0; 
+            $w = isset($resizeOptions['size'][0]) ? $resizeOptions['size'][0] : 0;
             $h = isset($resizeOptions['size'][1]) ? $resizeOptions['size'][1] : 0;
 
             return $image->size($w, $h, $resizeOptions);
@@ -330,11 +328,11 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
      *
      * Sees if $theme is available theme name, if so, return corresponding theme file path.
      * If $theme is a php file relative to the templates folder, return this file path.
-     * 
+     *
      * @param string    $theme
      */
     private function getThemeFile(string $theme = null) {
-        
+
         if(array_key_exists($theme, $this->availableThemes)) {
             return $this->availableThemes[$theme] . "/$theme.php";
         } else if(file_exists($this->templatesPath.$theme)) {
@@ -355,17 +353,17 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
         // split lines
         // https://stackoverflow.com/questions/7058168/explode-textarea-php-at-new-lines
         $datasplash = preg_split('/\r\n|[\r\n]/', $datablob);
-        
+
         $dataclean = array();
 
         foreach ($datasplash as $line) {
-            
+
             $keyval = explode('=', $line);
             $key = $keyval[0];
             $val = $keyval[1];
-            
+
             // boolean?
-            if($val === "true" || $val === "false") { 
+            if($val === "true" || $val === "false") {
                 $val = filter_var($val, FILTER_VALIDATE_BOOLEAN);
                 $dataclean[$key] = $val;
                 continue;
@@ -373,7 +371,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
 
             // integer?
             $v = filter_var($val, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
-            if($v !== null) { 
+            if($v !== null) {
                 $val = $v;
                 $dataclean[$key] = $val;
                 continue;
@@ -487,7 +485,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
 
     /**
      * module installation / deinstallation
-     * 
+     *
      */
     public function ___install() {}
     public function ___uninstall() {}
