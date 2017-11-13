@@ -1,0 +1,44 @@
+<?php namespace ProcessWire;
+/**
+ * MarkupPwpswpGalleryHorizontalScroller
+ * 
+ * Example gallery: A horizontally scrollable row of image items.
+ * legacy plain theme
+ * 
+ */
+class MarkupPwpswpGalleryHorizontalScroller extends MarkupPwpswpGallery implements Module {
+
+    public static function getModuleInfo() {
+        return array(
+            'title' => 'Pwpswp Gallery: Horizontal scroller',
+            'author' => 'Steffen Henschel',
+            'version' => '0.0.1',
+            'summary' => __('Example gallery: A horizontally scrollable row of image items. Alias: "h-scroller"'),
+            
+            'permission' => [],
+            'autoload' => false,
+            'singular' => false,
+            'permanent' => false,
+            'requires' => [
+                'ProcessWire>=3.0.0',
+                'PHP>=5.6',
+                'MarkupPwpswpGallery'
+            ],
+            'installs' => []
+        );
+    }
+
+    /**
+     * alias
+     * 
+     * return a short unique name for this module here
+     * legacy theme name
+     * it will be used for css classes, etc.
+     * 
+     * @return string
+     */
+    static public function alias() {
+        return 'h-scroller';
+    }
+}
+    

@@ -1,0 +1,19 @@
+.pwpswp-gallery--h-scroller {
+    width: 100%;
+    overflow-x: scroll;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.pwpswp-gallery__inner--h-scroller {
+    white-space: nowrap;
+}
+
+.pwpswp-gallery__item--h-scroller {
+    display: inline-block;
+    margin: 0 0 0.5rem 0;
+}
+
+/*.pwpswp-gallery__link--h-scroller {}
+.pwpswp-gallery__image--h-scroller {}
+.pwpswp-gallery__caption--h-scroller {}*/

@@ -1,0 +1,275 @@
+<?php namespace ProcessWire;
+
+/**
+ * MarkupPwpswpGallery
+ * 
+ * Basic gallery and base module for other MarkupPwpswpGallery extension modules
+ * legacy plain theme
+ * 
+ */
+class MarkupPwpswpGallery extends WireData implements Module {
+
+    public static function getModuleInfo() {
+        return array(
+            'title' => 'Pwpswp Gallery: Plain',
+            'author' => 'Steffen Henschel',
+            'version' => '0.0.1',
+            'summary' => __('Basic gallery and base module for other MarkupPwpswpGallery extension modules. Alias: "plain"'),
+            
+            'permission' => [],
+            'autoload' => false,
+            'singular' => false,
+            'permanent' => false,
+            'requires' => [
+                'ProcessWire>=3.0.0',
+                'PHP>=5.6',
+            ],
+            'installs' => []
+        );
+    }
+
+    /**
+     * alias
+     * 
+     * return a short unique name for this module here
+     * legacy theme name
+     * it will be used for css classes, module identification, etc.
+     * 
+     * @return string
+     */
+    static public function alias() {
+        return 'plain';
+    }
+
+    /**
+     * init
+     *
+     * @return void
+     */
+    public function init() {}
+
+
+
+    // public function setOptions() {} // maybe set some options beforehand?
+
+
+
+    /**
+     * getRelatedFileUrl
+     *
+     * returns url to a file of same name but with given extension
+     * residing just next to this .module file
+     * 
+     * @param string $ext file extension
+     * @return string|null
+     */
+    public function getRelatedFileUrl($ext) {
+        $this->rootPath = wire('config')->paths->root;
+        // reflection class to get correct file name (__FILE__ returns base class)
+        $reflector = new \ReflectionClass('\\' .$this->className(true));
+        $file = str_replace('.module', '.'.$ext, $reflector->getFileName());
+        if(is_file($file)) {
+            return str_replace($this->rootPath, '/', $file);
+        } else {
+            return null;
+        }
+    }
+
+
+
+    /**
+     * getJsUrl
+     *
+     * @return string|null
+     */
+    public function getJsUrl() { 
+        return $this->getRelatedFileUrl('js');
+    }
+    
+
+
+    /**
+     * getCssUrl
+     *
+     * @return string|null
+     */
+    public function getCssUrl() {
+        return $this->getRelatedFileUrl('css');
+    }
+
+
+
+    /**
+     * render
+     *
+     * build and render the gallery structure for this module
+     * 
+     * these methods are helpful and provide direct functionality:
+     * use $this->renderImageElement() to render a single image unit
+     * use $this->wrapMarkup() to wrap your structure into
+     * 
+     * @param [type] $images
+     * @param [type] $options
+     * @return string
+     */
+    public function ___render($images, $options = []) {
+
+        $imagesOutput = '';
+
+        foreach($images as $image) {
+            $imageData = $this->prepareImageData($image, $options);
+            $imagesOutput .= $this->renderImageElement($imageData);
+        }
+
+        return $this->wrapMarkup($imagesOutput, $options);
+    }
+
+
+
+    /**
+     * resizeImage
+     * 
+     * helper to resize an image according to 
+     *
+     * @param   array       $resizeOptions
+     * @param   array       $mixinOptions
+     * @return  callable
+     */
+    protected function resizeImage($image, $resizeOptions) {
+
+        if(isset($resizeOptions['size'])) {
+            if(strpos($resizeOptions['size'], 'x' === false)) throw new WireException("size option must contain \"x\"", 1);
+            $resizeOptions['size'] = explode('x', $resizeOptions['size']);
+        }
+
+        $w = isset($resizeOptions['size'][0]) ? $resizeOptions['size'][0] : (isset($resizeOptions['width']) ? $resizeOptions['width'] : 0);
+        $h = isset($resizeOptions['size'][1]) ? $resizeOptions['size'][1] : (isset($resizeOptions['height']) ? $resizeOptions['height'] : 0);
+
+        return $image->size($w, $h, $resizeOptions);
+    }
+
+
+
+    /**
+     * prepareImageData
+     * 
+     * helper to prepare all data for image template
+     * 
+     * @param PageImage $image
+     * @param array $options
+     * @return array
+     */
+    protected function prepareImageData(WireData $image, $options = []) {
+
+        $imageData = $image->getArray();
+        $imageData['url'] = $image->url;
+        $imageData['width'] = $image->width;
+        $imageData['height'] = $image->height;
+        $imageData['alt'] = $imageData['alt'] ?: $imageData['description'];
+
+        $imageData['thumbImage'] = $this->resizeImage($image, $options['imageResizerOptions']);
+        $imageData['loresImage'] = $this->resizeImage($image, $options['loresResizerOptions']);
+        return $imageData;
+    }
+
+
+
+    /**
+     * renderImageElement [markup helper]
+     *
+     * render markup for a single image
+     * the atom piece of the gallery
+     * 
+     * expected $data:
+     *      url - original image url!
+     *      width - original image width
+     *      height - original image height
+     *      alt - image alt text
+     * 
+     *      loresImage - low resolution image
+     *      thumbImage - thumbnail iamge
+     * 
+     * 
+     * @param [type] $data
+     * @return string
+     */
+    protected function renderImageElement($data) {
+        $out =  '';
+        
+        $out .= '<figure class="pwpswp-gallery__item pwpswp-gallery__item--' .$this->alias() .'"';
+        $out .= ' itemprop="associatedMedia" itemscope itemtype="http://schema.org/ImageObject"';
+        $out .= '>';
+        
+        $out .= '<a class="pwpswp-gallery__link pwpswp-gallery__link--' .$this->alias() .'"';
+        $out .= ' itemprop="contentUrl"';
+        $out .= ' href="' .$data['url'] .'"';
+        $out .= ' data-size="' .$data['width'] .'x' .$data['height'] .'"';
+        $out .= ' data-lores-src="' .$data['loresImage']->url .'"';
+        $out .= '>';
+
+        $out .= '<img class="pwpswp-gallery__image pwpswp-gallery__image--' .$this->alias() .'"';
+        $out .= ' itemprop="thumbnail"';
+        $out .= ' src="' .$data['thumbImage']->url .'"';
+        $out .= ' alt="' .$data['alt'] .'"';
+        $out .= '/>';
+        
+        $out .= '</a>';
+
+        $out .= '<figcaption class="pwpswp-gallery__caption pwpswp-gallery__caption--' .$this->alias() .'"';
+        $out .= ' itemprop="caption description">';
+        $out .= $data['description'];
+        $out .= '</figcaption>';
+        
+        $out .= '</figure>';
+
+        return $out;
+    }
+
+
+
+    /**
+     * wrapMarkup [markup helper]
+     * 
+     * put the images into a wrapping tag
+     * defines the gallery package
+     *
+     * @param [type] $options
+     * @return void
+     */
+    protected function wrapMarkup($innerMarkup, $options = []) {
+        
+        $out =  '<div';
+        $out .= ' class="pwpswp-gallery pwpswp-gallery--' .$this->alias() .'"';
+        $out .= ' itemscope itemtype="http://schema.org/ImageGallery"';
+        $out .= isset($options['pswpOptions']) ? $this->getPswpOptionsAttribute($options['pswpOptions']) : '';
+        $out .= '>';
+        
+        $out .= '<div class="pwpswp-gallery__inner pwpswp-gallery__inner--' .$this->alias() .'">';
+        $out .= $innerMarkup;
+        $out .= '</div></div>';
+        
+        return $out;
+    }
+
+
+
+    /**
+     * getPswpOptionsAttribute [markup helper]
+     * 
+     * @param object $options photoswipe options (will be json encoded)
+     * @return void
+     */
+    protected function getPswpOptionsAttribute($pswpOptions) {
+        return isset($pswpOptions) ? ' data-pswp-options="' . htmlspecialchars(json_encode($pswpOptions), ENT_QUOTES, 'UTF-8') . '"'  : '';
+    }
+
+
+
+    /**
+     * module installation / deinstallation
+     *
+     */
+    public function ___install() {}
+    public function ___uninstall() {}
+}
+    

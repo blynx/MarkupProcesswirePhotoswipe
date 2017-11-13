@@ -1,0 +1,224 @@
+<?php namespace ProcessWire;
+
+/**
+ * MarkupPwpswpGalleryPetersburger
+ *
+ * Gallery theme for MarkupProcesswirePhotoswipe
+ * 
+ * The inspiration:
+ *      https://github.com/SiteMarina/guggenheim
+ * 
+ * The linear partition problem:
+ *      http://www8.cs.umu.se/kurser/TDBAfl/VT06/algorithms/BOOK/BOOK2/NODE45.HTM
+ *      https://github.com/crispymtn/linear-partition/blob/master/linear_partition.coffee#L11 (coffee script)
+ * 
+ * A simplier and fast algorithm:
+ *      https://stackoverflow.com/a/6670011/3004669
+ *
+ */
+class MarkupPwpswpGalleryPetersburger extends MarkupPwpswpGallery implements Module, ConfigurableModule {
+
+    public static function getModuleInfo() {
+        return array(
+            'title' => 'Pwpswp Gallery: Petersburger Hängung',
+            'author' => 'Steffen Henschel',
+            'version' => '0.0.1',
+            'summary' => __('Gallery module for MarkupProcesswirePhotoswipe. A nice wall of pictures. Alias: "petersburger"'),
+            
+            'permission' => [],
+            'autoload' => false,
+            'singular' => false,
+            'permanent' => false,
+            'requires' => [
+                'ProcessWire>=3.0.0',
+                'PHP>=5.6',
+                'MarkupPwpswpGallery'
+            ],
+			'installs' => [
+                'MarkupPwpswpGallery'
+            ]
+        );
+    }
+
+    static public function getDefaultConfig() {
+        return array(
+            'virtualWidth' => 500,
+            'virtualRow' => 2000,
+            'algorithm' => 'default'
+            );
+    }
+
+    public function __construct() {
+        foreach(self::getDefaultConfig() as $key => $value) {
+            $this->$key = $value;
+        }
+    }
+
+
+    static public function alias() {
+        return 'petersburger';
+    }
+
+
+
+    public function ___render($images, $options = []) {
+
+        switch ($this->algorithm) {
+            case 'linear-partition':
+                // $this->renderLinearPartition($images, $options);
+                break;
+            
+            default:
+                $out = $this->___renderFast($images, $options);
+                return $out;
+                break;
+        }
+    }
+
+
+
+    /**
+     * renderFast
+     *
+     * after https://stackoverflow.com/a/6670011/3004669
+     * 
+     * @param [type] $images
+     * @param array $options
+     * @return void
+     */
+    private function ___renderFast($images, $options = []) {
+
+        // public function resizeImage($image, $resizeOptions)
+        // public function prepareImageData(PageImage $image, $options = [])
+        // protected function renderImageElement($data)
+        // protected function wrapMarkup($innerMarkup, $options = [])
+
+        $weighedThumbs = new WireArray();
+        $thumbsTotalVirtualWidth = 0;
+
+        // calculate aspect ratios of images and "virtual width" (actual virtual height ... who cares)
+        foreach ($images as $image) {
+            $weighedThumb = new WireData();
+            $weighedThumb->set('image', $image);
+            $weighedThumb->set('aspect', ($weighedThumb->image->width / $weighedThumb->image->height));
+            $weighedThumb->set('virtualWidth', $weighedThumb->aspect * $this->virtualWidth);
+            $weighedThumbs->add($weighedThumb);
+            $thumbsTotalVirtualWidth += $weighedThumb->virtualWidth;
+        }
+
+        // fast algorithm 1) sort
+        $weighedThumbs->sort('-aspect');
+        
+        $numRows = ceil(($thumbsTotalVirtualWidth / $this->virtualRow));
+        $weighedThumbRows = [];
+        for ($i=0; $i < $numRows; $i++) { 
+            $weighedThumbRows[] = new WireArray();
+        }
+        
+        // fast algorithm 2) distribute images over rows
+        $r = 0.0;
+        foreach ($weighedThumbs as $weighedThumb) {
+            $weighedThumbRows[$r]->add($weighedThumb);
+            $r++;
+            if($r == $numRows) $r = 0;
+        }
+        
+        // render rows
+        $allRowsMarkup = '';
+        $ri = 0;
+        foreach ($weighedThumbRows as $weighedThumbsRow) {
+            
+            // reverse every 2nd to diverse distribution
+            // and break "widest to thinnest" order over rows
+            if($ri % 2 == 1) $weighedThumbsRow->sort('aspect');
+            
+            $allRowsMarkup .= $this->renderRow($weighedThumbsRow, $options);
+            $ri++;
+        }
+        
+        // wrap up markup and return
+        $out = $this->wrapMarkup($allRowsMarkup, $options);
+        return $out;
+    }
+
+
+
+    /**
+     * Undocumented function
+     *
+     * @return void
+     */
+    protected function renderRow(WireArray $weighedThumbsRow, $options = []) {
+        
+        $rowTotalVirtualWidth = 0;
+        foreach ($weighedThumbsRow as $weighedThumb) {
+            $rowTotalVirtualWidth += $weighedThumb->virtualWidth;
+        }
+
+        $row = '';
+        $row .= '<div class="' . 'pwpswp-gallery__row pwpswp-gallery__row--' .$this->alias() .'">';
+        foreach ($weighedThumbsRow as $weighedThumb) {
+            $weighedThumb->rowFraction = ($weighedThumb->virtualWidth / $rowTotalVirtualWidth);
+            $thumbData = $this->prepareImageData($weighedThumb->image, $options);
+            $imageMarkup =  '<div class="' . 'pwpswp-gallery__item-wrapper pwpswp-gallery__item-wrapper--' .$this->alias() .'"';
+            $imageMarkup .= ' style="width:' .number_format(($weighedThumb->rowFraction * 100), 7, '.', '') .'%;"';
+            $imageMarkup .= '>';
+            $imageMarkup .= $this->renderImageElement($thumbData);
+            $imageMarkup .= '</div>';
+            $row .= $imageMarkup;
+        }
+        $row .= '</div>';
+        
+        return $row;
+    }
+
+
+
+    /**
+     * Create the modules setting page
+     *
+     */
+    static public function getModuleConfigInputfields(array $data) {
+
+        $modules = wire('modules');
+
+        // merge default config settings (custom values overwrite defaults)
+        $defaults = self::getDefaultConfig();
+        $data = array_merge($defaults, $data);
+
+        $form = new InputfieldWrapper();
+
+        // introduction
+        $field = $modules->get("InputfieldMarkup");
+        $field->name = 'introduction';
+        $field->label = __('Introduction');
+        $field->value = 'Hello';
+        $form->add($field);
+
+        // desired width
+        $field = $modules->get("InputfieldInteger");
+        $field->name = "virtualWidth";
+        $field->label = __("Virtual image width");
+        $field->description = __("A pseudo width the algorithm uses for the calculation. An image with an aspect ratio of 1:1 would have this width.");
+        $field->value = $data['virtualWidth'];
+        $form->add($field);
+
+        // desired width
+        $field = $modules->get("InputfieldInteger");
+        $field->name = "virtualRow";
+        $field->label = __("Available virtual row length");
+        $field->description = __("The available pseudo length of the row the algorithm tests the pseudo width of the images against.");
+        $field->value = $data['virtualRow'];
+        $form->add($field);
+
+        // choose algorithm
+        $field = $modules->get("InputfieldRadios");
+        $field->name = "algorithm";
+        $field->label = __("Choose Algorithm");
+        $field->description = __("Choose the algorithm the gallery is calculated with. Might result in slightly different changes.");
+        $field->value = $data['algorithm'];
+        $form->add($field);
+
+        return $form;
+    }
+}

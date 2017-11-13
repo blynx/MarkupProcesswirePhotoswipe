@@ -1,0 +1,25 @@
+/* .pwpswp-gallery--petersburger {} */
+/* .pwpswp-gallery__inner--petersburger {} */
+
+.pwpswp-gallery__row--petersburger {
+    display: flex;
+}
+
+.pwpswp-gallery__item-wrapper--petersburger {
+    padding: 0.125rem;
+}
+
+.pwpswp-gallery__item--petersburger {
+    margin: 0;
+}
+
+/* .pwpswp-gallery__link--petersburger {} */
+
+.pwpswp-gallery__image--petersburger {
+    display: block;
+    width: 100%;
+}
+
+.pwpswp-gallery__caption--petersburger {
+    display: none;
+}

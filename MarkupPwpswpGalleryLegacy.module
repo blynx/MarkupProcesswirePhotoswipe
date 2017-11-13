@@ -1,0 +1,169 @@
+<?php namespace ProcessWire;
+
+/**
+ * MarkupPwpswpGalleryLegacy
+ * 
+ * Basic gallery and base module for other MarkupPwpswpGallery extension modules
+ * legacy plain theme
+ * 
+ */
+class MarkupPwpswpGalleryLegacy extends MarkupPwpswpGallery implements Module {
+
+    private $templateFile;
+
+    public static function getModuleInfo() {
+        return array(
+            'title' => 'Pwpswp Gallery: Legacy',
+            'author' => 'Steffen Henschel',
+            'version' => '0.0.1',
+            'summary' => __('Adapter to enable compatibility with previous themeing pattern. Not available in Processwire Photoswipe config.'),
+            
+            'permission' => [],
+            'autoload' => false,
+            'singular' => false,
+            'permanent' => false,
+            'requires' => [
+                'ProcessWire>=3.0.0',
+                'PHP>=5.6',
+            ],
+            'installs' => []
+        );
+    }
+
+    /**
+     * alias
+     * 
+     * return a short unique name for this module here
+     * legacy theme name
+     * it will be used for css classes, module identification, etc.
+     * 
+     * @return string
+     */
+    static public function alias() {
+        return 'legacy';
+    }
+
+    /**
+     * init
+     *
+     * @return void
+     */
+    public function init() {}
+
+
+
+    /**
+     * getRelatedFileUrl
+     *
+     * returns url to a file of same name but with given extension
+     * residing just next to this .module file
+     * 
+     * @param string $ext file extension
+     * @return string|null
+     */
+    public function getRelatedFileUrl($ext) {
+
+        $file = preg_replace("/(.php$)/", '.'.$ext, $this->templateFile);
+        if(is_file($file)) {
+            return str_replace(wire('config')->paths->root, '/', $file);
+        } else {
+            return null;
+        }
+    }
+
+
+
+    /**
+     * setTemplateFile
+     * 
+     * set template file relative to site/templates/
+     *
+     * @param [type] $path
+     * @return void
+     */
+    public function setTemplateFile($path) {
+        $this->templateFile = wire('config')->paths->templates .ltrim($path, '/');
+    }
+
+
+
+    /**
+     * getTemplateFile
+     *
+     * @param   string    $template
+     * @return  mixed
+     */
+    private function getTemplateFile($template = null) {
+        return $this->templateFile;
+    }
+
+
+
+    /**
+     * getResizeClosure
+     *
+     * @param   array       $resizeOptions
+     * @param   array       $mixinOptions
+     * @return  callable    
+     */
+    public function getResizeClosure($resizeOptions) {
+        
+        return function(Pageimage $image, $mixinOptions = []) use($resizeOptions) {
+
+            if(strpos($resizeOptions['size'], 'x' === false)) throw new WireException("size option must contain \"x\"", 1);
+
+            $resizeOptions['size'] = explode('x', $resizeOptions['size']);
+            $resizeOptions = array_merge($resizeOptions, $mixinOptions);
+
+            $w = isset($resizeOptions['size'][0]) ? $resizeOptions['size'][0] : 0; 
+            $h = isset($resizeOptions['size'][1]) ? $resizeOptions['size'][1] : 0;
+
+            return $image->size($w, $h, $resizeOptions);
+        };
+    }
+
+
+
+    /**
+     * render
+     *
+     * build and render the gallery structure for this module
+     * 
+     * these methods are helpful and provide direct functionality:
+     * use $this->renderImageElement() to render a single image unit
+     * use $this->wrapMarkup() to wrap your structure into
+     * 
+     * @param [type] $images
+     * @param [type] $options
+     * @return string
+     */
+    public function ___render($images, $options = []) {
+        $templateFile = $this->getTemplateFile();
+        if(is_file($templateFile)) {
+            $output = wire('files')->render($templateFile, array(
+                'images' => $images,
+                'options' => $options,
+                'imageResize' => $this->getResizeClosure($options['imageResizerOptions']),
+                'loresResize' => $this->getResizeClosure($options['loresResizerOptions'])
+            ));
+            return $output;
+        } else {
+            user_error('Template file  "' .$templateFile .'" not found. Empty string returned.', E_USER_WARNING);
+            return '';
+        }
+    }
+
+
+
+    /**
+     * getPswpOptionsAttribute [markup helper]
+     * 
+     * @param [type] $options
+     * @return void
+     */
+    public function getPswpOptionsAttribute($options) {
+        return isset($options['pswpOptions']) ? ' data-pswp-options="' . htmlspecialchars(json_encode($options['pswpOptions']), ENT_QUOTES, 'UTF-8') . '"'  : '';
+    }
+
+}
+    
