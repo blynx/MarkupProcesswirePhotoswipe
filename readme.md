@@ -15,7 +15,7 @@ In the [processwire modules directory](https://modules.processwire.com/modules/m
 
 The ProcessWire way of life: [http://modules.processwire.com/install-uninstall/](http://modules.processwire.com/install-uninstall/)
 
-You can use this link to install from URL: https://github.com/blynx/MarkupProcesswirePhotoswipe/archive/master.zip
+I recommend to install the module via `Modules > New > Add Module From Directory`. Paste the class name `MarkupProcesswirePhotoswipe` into the text field and click `Download And Install`.
 
 ## How To
 
@@ -168,41 +168,46 @@ You may still provide your own more compatible gallery init script. (See _Custom
 
 ## Changelog
 
+#### 0.99.1 - 2017/11/16
+
+* fixed: ProcessWirePhotoswipe.module was not able to get correct url when modules directory differed from class name. Determine module urls with actual file path via reflector class now.
+
+
 #### 0.99.0 - 2017/11/13
 
-other: Refactoring. No more 'themes', instead gallery modules.  
-added: Basic gallery module (MarkupPwpswpGallery) to extend from  
-added: Gallery 'Petersburger Hängung'  
-added: Photoswipe animation on gallery init  
-added: Galleries open automatically via url hash e.g. "#&gid=1&pid=2"
+* other: Refactoring. No more 'themes', instead gallery modules.  
+* added: Basic gallery module (MarkupPwpswpGallery) to extend from  
+* added: Gallery 'Petersburger Hängung'  
+* added: Photoswipe animation on gallery init  
+* added: Galleries open automatically via url hash e.g. "#&gid=1&pid=2"
 
 #### 0.7.5 - 2017/10/24, 
 
-breaking change: Renamed `getResizeLamda()` to `getResizeClosure()`
+* breaking change: Renamed `getResizeLamda()` to `getResizeClosure()`
 
-fixed: Removal of scalar type hints for compatibility to php 5.6  
-other: Very minor code refactoring  
+* fixed: Removal of scalar type hints for compatibility to php 5.6  
+* other: Very minor code refactoring  
 
 #### 0.7.1 - 2017/07/13, rubberband fix
 
-fixed: Added rubberband/momentum scrolling on ios for h-scroller theme.
+* fixed: Added rubberband/momentum scrolling on ios for h-scroller theme.
 
 #### 0.7 - 2017/07/12, themes
 
-fixed: Size option correctly adopts height value  
-added: Theme functionality  
-added: Simple themes 'plain' (previous default), 'flex', 'h-scroller' 
-other: Updated readme  
-other: No notice on undefined photoswipe options  
-other: Refactoring  
+* fixed: Size option correctly adopts height value  
+* added: Theme functionality  
+* added: Simple themes 'plain' (previous default), 'flex', 'h-scroller' 
+* other: Updated readme  
+* other: No notice on undefined photoswipe options  
+* other: Refactoring  
 
 #### 0.6 - 2017/07/06, liberated renderGallery()
 
-added: Liberated `renderGallery()` to accept arrays and WireArray derivatives  
-removed: Removed pointless shortcut alias class  
-fixed: Use of correct module/class name for file paths  
-fixed: Configuration instructions for file paths  
-other: Updated readme
-other: Updated readme  
+* added: Liberated `renderGallery()` to accept arrays and WireArray derivatives  
+* removed: Removed pointless shortcut alias class  
+* fixed: Use of correct module/class name for file paths  
+* fixed: Configuration instructions for file paths  
+* other: Updated readme
+* other: Updated readme  
 
 #### 0.5.0 - 2017/07/05, Initial release

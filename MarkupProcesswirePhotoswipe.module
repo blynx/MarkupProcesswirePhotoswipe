@@ -21,7 +21,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
         return array(
             'title' => 'Processwire Photoswipe',
             'author' => 'Steffen Henschel',
-            'version' => '0.99.0',
+            'version' => '0.99.1',
             'summary' => __('Easily include Photoswipe by Dmitry Semenov. Comes with markup of a couple of gellery styles.'),
 
             'permission' => [],
@@ -81,7 +81,11 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
             $this->set('moduleLoaded', true);
 
             // set common paths and urls
-            $this->moduleUrl = $config->urls->siteModules . $this->className . '/';
+
+            // use reflector class to get actual module location
+            $reflector = new \ReflectionClass('\\' .$this->className(true));
+            $this->moduleUrl = '/'.str_replace([$config->paths->root, $this->className.'.module'], ['', ''], $reflector->getFileName());
+            
             $this->rootUrl = $config->urls->root;
 
             // init config
