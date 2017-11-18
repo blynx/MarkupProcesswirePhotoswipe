@@ -468,7 +468,6 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
         
         if($toVersionSplit[1] >= 99) {
             $this->warning("~ was alomst completely rewritten. Everything should work just fine due to a compatibility module. Nevertheless, please check if everything works for you, too. 'Themes' are deprecated now. Please have a look at the readme.");
-            bd($toVersion);
         }
     }
 

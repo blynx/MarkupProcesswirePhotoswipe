@@ -43,9 +43,9 @@ echo $pwpswp->renderGallery($page->nicePictures, ['gallery' => 'plain', 'moreOpt
 Every gallery module has a short alias which is used here. You can find it in the description of the module. Otherwise, here is the list:
 
 - **petersburger**: A balanced gallery (default).
-- **plain**: Nothing is styles here.
+- **plain**: Base module, nothing is styled here.
 - **flex**: Basic grid using flexbox.
-- **h-scroller**: Horizontal scrollable box.
+- **h-scroller**: Horizontally scrollable box.
 
 ### BYOM (Build Your Own Module)
 
