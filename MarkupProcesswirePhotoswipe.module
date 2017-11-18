@@ -21,7 +21,7 @@ class MarkupProcesswirePhotoswipe extends WireData implements Module, Configurab
         return array(
             'title' => 'Processwire Photoswipe',
             'author' => 'Steffen Henschel',
-            'version' => '0.99.1',
+            'version' => '0.99.2',
             'summary' => __('Easily include Photoswipe by Dmitry Semenov. Comes with markup of a couple of gellery styles.'),
 
             'permission' => [],
