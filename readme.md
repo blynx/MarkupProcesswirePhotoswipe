@@ -91,7 +91,7 @@ $galleryOptions = [
     // Image resize options for thumbnail image.
     // Example: Default module configuration.
     'imageResizerOptions' => [
-        'size' => '500x500'
+        'size' => '500x500',
         'quality' => 70,
         'upscaling' => false,
         'cropping' => false
@@ -100,7 +100,7 @@ $galleryOptions = [
     // Image resize options for quick preview image in Photoswipe.
     // Example: Default module configuration.
     'loresResizerOptions' => [
-        'size' => '500x500'
+        'size' => '500x500',
         'quality' => 20,
         'upscaling' => false,
         'cropping' => false
